@@ -1,0 +1,34 @@
+@'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SIEM Dashboard - Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+<div class="login-container">
+  <div class="login-box">
+    <div class="login-logo">🔐</div>
+    <h1>SIEM Dashboard</h1>
+    <p class="login-subtitle">Security Information & Event Management</p>
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="Enter username" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter password" required>
+      </div>
+      <button type="submit" class="btn-login">Login</button>
+    </form>
+    <p class="login-hint">Default: admin / admin123</p>
+  </div>
+</div>
+</body>
+</html>
+'@ | Out-File -FilePath templates\login.html -Encoding utf8
