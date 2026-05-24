@@ -1,0 +1,18 @@
+﻿<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>SIEM Login</title></head>
+<body style="background:#0f1117;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
+<div style="background:#1a1d27;padding:2rem;border-radius:12px;width:360px;border:1px solid #2d3148;">
+<h1 style="color:#818cf8;text-align:center;">🔐 SIEM Dashboard</h1>
+{% if error %}<p style="color:#fca5a5;text-align:center;">{{ error }}</p>{% endif %}
+<form method="POST">
+<p style="color:#94a3b8;margin-bottom:.3rem;">Username</p>
+<input name="username" required style="width:100%;padding:.7rem;background:#222536;border:1px solid #2d3148;border-radius:6px;color:#fff;margin-bottom:1rem;">
+<p style="color:#94a3b8;margin-bottom:.3rem;">Password</p>
+<input name="password" type="password" required style="width:100%;padding:.7rem;background:#222536;border:1px solid #2d3148;border-radius:6px;color:#fff;margin-bottom:1.5rem;">
+<button type="submit" style="width:100%;padding:.8rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;">Login</button>
+</form>
+<p style="color:#64748b;text-align:center;margin-top:1rem;font-size:.8rem;">Default: admin / admin123</p>
+</div>
+</body>
+</html>

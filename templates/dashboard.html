@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SIEM Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0f1117;color:#e2e8f0;font-family:sans-serif;}
+.navbar{background:#1a1d27;padding:.9rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2d3148;}
+.nav-brand{color:#818cf8;font-size:1.2rem;font-weight:700;}
+.nav-right{display:flex;gap:1rem;align-items:center;}
+.nav-user{color:#94a3b8;font-size:.9rem;}
+.btn-logout{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:.4rem .85rem;border-radius:8px;text-decoration:none;font-size:.85rem;}
+.container{max-width:1400px;margin:0 auto;padding:2rem;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.stat-card{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:1.5rem;display:flex;align-items:center;gap:1rem;}
+.stat-icon{font-size:2rem;}
+.stat-value{font-size:1.8rem;font-weight:700;color:#818cf8;}
+.stat-label{font-size:.8rem;color:#94a3b8;}
+.charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;}
+.chart-card{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:1.5rem;}
+.chart-card h3{color:#94a3b8;font-size:.95rem;margin-bottom:1rem;}
+.table-card{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:1.5rem;}
+.table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.table-header h3{color:#e2e8f0;}
+.table-header input{background:#222536;border:1px solid #2d3148;color:#e2e8f0;padding:.5rem 1rem;border-radius:8px;font-size:.9rem;outline:none;width:260px;}
+table{width:100%;border-collapse:collapse;font-size:.88rem;}
+th{color:#94a3b8;padding:.75rem 1rem;text-align:left;border-bottom:1px solid #2d3148;}
+td{padding:.75rem 1rem;border-bottom:1px solid #2d3148;}
+tr:hover{background:#222536;}
+code{background:#222536;padding:.2rem .4rem;border-radius:4px;color:#818cf8;font-size:.82rem;}
+.badge{padding:.25rem .65rem;border-radius:20px;font-size:.75rem;font-weight:600;}
+.badge-blocked{background:rgba(239,68,68,.15);color:#fca5a5;}
+.badge-allowed{background:rgba(16,185,129,.15);color:#6ee7b7;}
+.badge-flagged{background:rgba(245,158,11,.15);color:#fcd34d;}
+.badge-critical{background:rgba(239,68,68,.2);color:#f87171;}
+.badge-high{background:rgba(245,158,11,.2);color:#fbbf24;}
+.badge-medium{background:rgba(99,102,241,.2);color:#a5b4fc;}
+.badge-low{background:rgba(16,185,129,.2);color:#6ee7b7;}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-brand">🔐 SIEM Dashboard</div>
+  <div class="nav-right">
+    <span class="nav-user">👤 {{ user }}</span>
+    <a href="/logout" class="btn-logout">Logout</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">📋</div><div><div class="stat-value">{{ total }}</div><div class="stat-label">Total Events</div></div></div>
+    <div class="stat-card"><div class="stat-icon">🚫</div><div><div class="stat-value">{{ blocked }}</div><div class="stat-label">Blocked</div></div></div>
+    <div class="stat-card"><div class="stat-icon">⚠️</div><div><div class="stat-value">{{ critical }}</div><div class="stat-label">Critical</div></div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div><div class="stat-value" style="color:#10b981;">LIVE</div><div class="stat-label">System Status</div></div></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>Threat Levels</h3><canvas id="threatChart"></canvas></div>
+    <div class="chart-card"><h3>Event Status</h3><canvas id="statusChart"></canvas></div>
+    <div class="chart-card"><h3>Top Countries</h3><canvas id="countryChart"></canvas></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <h3>📄 Recent Security Events</h3>
+      <input type="text" id="searchInput" placeholder="🔍 Search logs..." onkeyup="filterTable()">
+    </div>
+    <table id="logsTable">
+      <thead><tr><th>Timestamp</th><th>Source IP</th><th>Action</th><th>Country</th><th>Status</th><th>Threat Level</th></tr></thead>
+      <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.timestamp }}</td>
+        <td><code>{{ log.source_ip }}</code></td>
+        <td>{{ log.action }}</td>
+        <td>{{ log.country }}</td>
+        <td><span class="badge badge-{{ log.status.lower() }}">{{ log.status }}</span></td>
+        <td><span class="badge badge-{{ log.threat_level.lower() }}">{{ log.threat_level }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+function filterTable(){
+  var input=document.getElementById("searchInput").value.toLowerCase();
+  var rows=document.querySelectorAll("#logsTable tbody tr");
+  rows.forEach(function(row){row.style.display=row.textContent.toLowerCase().includes(input)?"":"none";});
+}
+async function loadCharts(){
+  const res=await fetch("/api/chart-data");
+  const data=await res.json();
+  new Chart(document.getElementById("threatChart"),{type:"doughnut",data:{labels:Object.keys(data.threats),datasets:[{data:Object.values(data.threats),backgroundColor:["#ef4444","#f59e0b","#6366f1","#10b981"],borderWidth:2,borderColor:"#1a1d27"}]},options:{plugins:{legend:{labels:{color:"#94a3b8"}}},cutout:"65%"}});
+  new Chart(document.getElementById("statusChart"),{type:"bar",data:{labels:Object.keys(data.statuses),datasets:[{data:Object.values(data.statuses),backgroundColor:["#ef4444","#10b981","#f59e0b"],borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#2d3148"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#2d3148"}}}}});
+  new Chart(document.getElementById("countryChart"),{type:"bar",data:{labels:Object.keys(data.countries),datasets:[{data:Object.values(data.countries),backgroundColor:"#6366f1",borderRadius:6}]},options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#2d3148"}},y:{ticks:{color:"#94a3b8"},grid:{display:false}}}}});
+}
+loadCharts();
+</script>
+</body>
+</html>
